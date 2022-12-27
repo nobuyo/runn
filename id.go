@@ -20,6 +20,7 @@ const (
 	RunnerTypeCDP     RunnerType = "cdp"
 	RunnerTypeSSH     RunnerType = "ssh"
 	RunnerTypeExec    RunnerType = "exec"
+	RunnerTypeShell   RunnerType = "shell"
 	RunnerTypeTest    RunnerType = "test"
 	RunnerTypeDump    RunnerType = "dump"
 	RunnerTypeInclude RunnerType = "include"

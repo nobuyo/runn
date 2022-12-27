@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cli/safeexec"
 	"github.com/goccy/go-json"
 	"github.com/goccy/go-yaml"
 	"github.com/k1LoW/sshc/v3"
@@ -34,6 +35,7 @@ type book struct {
 	grpcRunners    map[string]*grpcRunner
 	cdpRunners     map[string]*cdpRunner
 	sshRunners     map[string]*sshRunner
+	shellRunners   map[string]*shellRunner
 	profile        bool
 	intervalStr    string
 	interval       time.Duration
@@ -181,6 +183,14 @@ func (bk *book) parseRunner(k string, v interface{}) error {
 		// SSH Runner
 		if !detect {
 			detect, err = bk.parseSSHRunnerWithDetailed(k, tmp)
+			if err != nil {
+				return err
+			}
+		}
+
+		// Shell Runner
+		if !detect {
+			detect, err = bk.parseShellRunnerWithDetailed(k, tmp)
 			if err != nil {
 				return err
 			}
@@ -353,6 +363,26 @@ func (bk *book) parseSSHRunnerWithDetailed(name string, b []byte) (bool, error) 
 	return true, nil
 }
 
+func (bk *book) parseShellRunnerWithDetailed(name string, b []byte) (bool, error) {
+	c := &shellRunnerConfig{}
+	if err := yaml.Unmarshal(b, c); err != nil {
+		return false, nil
+	}
+
+	shell, err := safeexec.LookPath(c.Shell)
+	if err != nil {
+		return false, err
+	}
+	r := &shellRunner{
+		name:        name,
+		shell:       shell,
+		keepProcess: c.KeepProcess,
+	}
+
+	bk.shellRunners[name] = r
+	return true, nil
+}
+
 func (bk *book) applyOptions(opts ...Option) error {
 	opts = setupBuiltinFunctions(opts...)
 	for _, opt := range opts {
@@ -377,19 +407,20 @@ func (bk *book) generateOperatorRoot() (string, error) {
 
 func newBook() *book {
 	return &book{
-		runners:     map[string]interface{}{},
-		vars:        map[string]interface{}{},
-		rawSteps:    []map[string]interface{}{},
-		funcs:       map[string]interface{}{},
-		httpRunners: map[string]*httpRunner{},
-		dbRunners:   map[string]*dbRunner{},
-		grpcRunners: map[string]*grpcRunner{},
-		cdpRunners:  map[string]*cdpRunner{},
-		sshRunners:  map[string]*sshRunner{},
-		interval:    0 * time.Second,
-		runnerErrs:  map[string]error{},
-		stdout:      os.Stdout,
-		stderr:      os.Stderr,
+		runners:      map[string]interface{}{},
+		vars:         map[string]interface{}{},
+		rawSteps:     []map[string]interface{}{},
+		funcs:        map[string]interface{}{},
+		httpRunners:  map[string]*httpRunner{},
+		dbRunners:    map[string]*dbRunner{},
+		grpcRunners:  map[string]*grpcRunner{},
+		cdpRunners:   map[string]*cdpRunner{},
+		sshRunners:   map[string]*sshRunner{},
+		shellRunners: map[string]*shellRunner{},
+		interval:     0 * time.Second,
+		runnerErrs:   map[string]error{},
+		stdout:       os.Stdout,
+		stderr:       os.Stderr,
 	}
 }
 

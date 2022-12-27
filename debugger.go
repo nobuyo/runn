@@ -154,6 +154,22 @@ func (d *debugger) CaptureExecStderr(stderr string) {
 	_, _ = fmt.Fprintf(d.out, "-----START STDERR-----\n%s\n-----END STDERR-----\n", stderr)
 }
 
+func (d *debugger) CaptureShellCommand(command string) {
+	_, _ = fmt.Fprintf(d.out, "-----START COMMAND-----\n%s\n-----END COMMAND-----\n", command)
+}
+
+func (d *debugger) CaptureShellStdin(stdin string) {
+	_, _ = fmt.Fprintf(d.out, "-----START STDIN-----\n%s\n-----END STDIN-----\n", stdin)
+}
+
+func (d *debugger) CaptureShellStdout(stdout string) {
+	_, _ = fmt.Fprintf(d.out, "-----START STDOUT-----\n%s\n-----END STDOUT-----\n", stdout)
+}
+
+func (d *debugger) CaptureShellStderr(stderr string) {
+	_, _ = fmt.Fprintf(d.out, "-----START STDERR-----\n%s\n-----END STDERR-----\n", stderr)
+}
+
 func (d *debugger) SetCurrentIDs(ids IDs) {
 	d.currentIDs = ids
 }

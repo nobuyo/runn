@@ -63,6 +63,10 @@ func (d *cmdOut) CaptureExecCommand(command string)                             
 func (d *cmdOut) CaptureExecStdin(stdin string)                                      {}
 func (d *cmdOut) CaptureExecStdout(stdout string)                                    {}
 func (d *cmdOut) CaptureExecStderr(stderr string)                                    {}
+func (d *cmdOut) CaptureShellCommand(command string)                                 {}
+func (d *cmdOut) CaptureShellStdin(stdin string)                                     {}
+func (d *cmdOut) CaptureShellStdout(stdout string)                                   {}
+func (d *cmdOut) CaptureShellStderr(stderr string)                                   {}
 func (d *cmdOut) SetCurrentIDs(ids IDs)                                              {}
 func (d *cmdOut) Errs() error {
 	return d.errs

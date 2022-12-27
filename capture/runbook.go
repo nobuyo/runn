@@ -440,6 +440,22 @@ func (c *cRunbook) CaptureExecStderr(stderr string) {
 	r.currentExecTestCond = nil
 }
 
+func (c *cRunbook) CaptureShellCommand(command string) {
+	// not implemented
+}
+
+func (c *cRunbook) CaptureShellStdin(stdin string) {
+	// not implemented
+}
+
+func (c *cRunbook) CaptureShellStdout(stdout string) {
+	// not implemented
+}
+
+func (c *cRunbook) CaptureShellStderr(stderr string) {
+	// not implemented
+}
+
 func (c *cRunbook) SetCurrentIDs(ids runn.IDs) {
 	c.currentIDs = ids
 }

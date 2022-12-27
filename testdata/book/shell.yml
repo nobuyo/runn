@@ -1,0 +1,28 @@
+debug: true
+desc: Exec with specific shell test
+runners:
+  bash:
+    shell: bash
+    keepProcess: true
+steps:
+  -
+    desc: 'step1'
+    bash:
+      command: source ../testdata/test.sh
+    test: 'current.stderr == ""'
+  -
+    desc: 'step2'
+    bash:
+      command: echo hello world
+    test: 'current.stdout contains "hello"'
+  -
+    desc: 'step3'
+    bash:
+      command: cat
+      stdin: '{{ steps[1].stdout }}'
+    test: 'current.stdout contains "world"'
+  -
+    desc: 'step4'
+    bash:
+      command: sayHi
+    test: 'current.stderr == "" && current.stdout contains "Hi"'

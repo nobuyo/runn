@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Songmu/prompter"
+	"github.com/cli/safeexec"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/k1LoW/runn/builtin"
 	"github.com/k1LoW/sshc/v3"
@@ -53,6 +54,9 @@ func Book(path string) Option {
 		}
 		for k, r := range loaded.sshRunners {
 			bk.sshRunners[k] = r
+		}
+		for k, r := range loaded.shellRunners {
+			bk.shellRunners[k] = r
 		}
 		for k, v := range loaded.vars {
 			bk.vars[k] = v
@@ -109,6 +113,9 @@ func Overlay(path string) Option {
 		}
 		for k, r := range loaded.sshRunners {
 			bk.sshRunners[k] = r
+		}
+		for k, r := range loaded.shellRunners {
+			bk.shellRunners[k] = r
 		}
 		for k, v := range loaded.vars {
 			bk.vars[k] = v
@@ -176,6 +183,11 @@ func Underlay(path string) Option {
 		for k, r := range loaded.sshRunners {
 			if _, ok := bk.sshRunners[k]; !ok {
 				bk.sshRunners[k] = r
+			}
+		}
+		for k, r := range loaded.shellRunners {
+			if _, ok := bk.shellRunners[k]; !ok {
+				bk.shellRunners[k] = r
 			}
 		}
 		for k, v := range loaded.vars {
@@ -465,6 +477,36 @@ func SSHRunnerWithOptions(name string, opts ...sshRunnerOption) Option {
 		}
 
 		bk.sshRunners[name] = r
+		return nil
+	}
+}
+
+// ShellRunnerWithOptions - Set Shell runner to runbook using options
+func ShellRunnerWithOptions(name string, opts ...shellRunnerOption) Option {
+	return func(bk *book) error {
+		delete(bk.runnerErrs, name)
+		c := &shellRunnerConfig{}
+		for _, opt := range opts {
+			if err := opt(c); err != nil {
+				return err
+			}
+		}
+		if c.Shell == "" {
+			return fmt.Errorf("invalid Shell runner '%s': shell is required", name)
+		}
+
+		shell, err := safeexec.LookPath(c.Shell)
+		if err != nil {
+			return err
+		}
+
+		r := &shellRunner{
+			name:        name,
+			shell:       shell,
+			keepProcess: c.KeepProcess,
+		}
+
+		bk.shellRunners[name] = r
 		return nil
 	}
 }

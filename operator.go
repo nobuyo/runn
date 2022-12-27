@@ -31,37 +31,38 @@ var (
 var _ otchkiss.Requester = (*operators)(nil)
 
 type operator struct {
-	id          string
-	httpRunners map[string]*httpRunner
-	dbRunners   map[string]*dbRunner
-	grpcRunners map[string]*grpcRunner
-	cdpRunners  map[string]*cdpRunner
-	sshRunners  map[string]*sshRunner
-	steps       []*step
-	store       store
-	desc        string
-	useMap      bool // Use map syntax in `steps:`.
-	debug       bool
-	profile     bool
-	interval    time.Duration
-	loop        *Loop
-	root        string
-	t           *testing.T
-	thisT       *testing.T
-	parent      *step
-	failFast    bool
-	included    bool
-	ifCond      string
-	skipTest    bool
-	skipped     bool
-	stdout      io.Writer
-	stderr      io.Writer
-	bookPath    string
-	beforeFuncs []func(*RunResult) error
-	afterFuncs  []func(*RunResult) error
-	sw          *stopw.Span
-	capturers   capturers
-	runResult   *RunResult
+	id           string
+	httpRunners  map[string]*httpRunner
+	dbRunners    map[string]*dbRunner
+	grpcRunners  map[string]*grpcRunner
+	cdpRunners   map[string]*cdpRunner
+	sshRunners   map[string]*sshRunner
+	shellRunners map[string]*shellRunner
+	steps        []*step
+	store        store
+	desc         string
+	useMap       bool // Use map syntax in `steps:`.
+	debug        bool
+	profile      bool
+	interval     time.Duration
+	loop         *Loop
+	root         string
+	t            *testing.T
+	thisT        *testing.T
+	parent       *step
+	failFast     bool
+	included     bool
+	ifCond       string
+	skipTest     bool
+	skipped      bool
+	stdout       io.Writer
+	stderr       io.Writer
+	bookPath     string
+	beforeFuncs  []func(*RunResult) error
+	afterFuncs   []func(*RunResult) error
+	sw           *stopw.Span
+	capturers    capturers
+	runResult    *RunResult
 }
 
 // Desc returns `desc:` of runbook
@@ -154,12 +155,13 @@ func New(opts ...Option) (*operator, error) {
 	}
 
 	o := &operator{
-		id:          generateRunbookID(),
-		httpRunners: map[string]*httpRunner{},
-		dbRunners:   map[string]*dbRunner{},
-		grpcRunners: map[string]*grpcRunner{},
-		cdpRunners:  map[string]*cdpRunner{},
-		sshRunners:  map[string]*sshRunner{},
+		id:           generateRunbookID(),
+		httpRunners:  map[string]*httpRunner{},
+		dbRunners:    map[string]*dbRunner{},
+		grpcRunners:  map[string]*grpcRunner{},
+		cdpRunners:   map[string]*cdpRunner{},
+		sshRunners:   map[string]*sshRunner{},
+		shellRunners: map[string]*shellRunner{},
 		store: store{
 			steps:    []map[string]interface{}{},
 			stepMap:  map[string]map[string]interface{}{},
@@ -224,6 +226,10 @@ func New(opts ...Option) (*operator, error) {
 		v.operator = o
 		o.sshRunners[k] = v
 	}
+	for k, v := range bk.shellRunners {
+		v.operator = o
+		o.shellRunners[k] = v
+	}
 
 	keys := map[string]struct{}{}
 	for k := range o.httpRunners {
@@ -248,6 +254,12 @@ func New(opts ...Option) (*operator, error) {
 		keys[k] = struct{}{}
 	}
 	for k := range o.sshRunners {
+		if _, ok := keys[k]; ok {
+			return nil, fmt.Errorf("duplicate runner names (%s): %s", o.bookPath, k)
+		}
+		keys[k] = struct{}{}
+	}
+	for k := range o.shellRunners {
 		if _, ok := keys[k]; ok {
 			return nil, fmt.Errorf("duplicate runner names (%s): %s", o.bookPath, k)
 		}
@@ -453,6 +465,16 @@ func (o *operator) AppendStep(key string, s map[string]interface{}) error {
 					return fmt.Errorf("invalid SSH command: %v", v)
 				}
 				step.sshCommand = vv
+				detected = true
+			}
+			sh, ok := o.shellRunners[k]
+			if ok && !detected {
+				step.shellRunner = sh
+				vv, ok := v.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("invalid Shell command: %v", v)
+				}
+				step.shellCommand = vv
 				detected = true
 			}
 
@@ -693,7 +715,11 @@ func (o *operator) runInternal(ctx context.Context) (rerr error) {
 				}
 			}
 			if s.runnerKey != "" {
-				o.Debugf(cyan("Run '%s' on %s\n"), s.runnerKey, o.stepName(i))
+				if s.desc != "" {
+					o.Debugf(cyan("Run '%s: %s' on %s\n"), s.runnerKey, s.desc, o.stepName(i))
+				} else {
+					o.Debugf(cyan("Run '%s' on %s\n"), s.runnerKey, o.stepName(i))
+				}
 			}
 
 			stepFn := func(t *testing.T) error {
@@ -761,6 +787,15 @@ func (o *operator) runInternal(ctx context.Context) (rerr error) {
 					}
 					if err := s.sshRunner.Run(ctx, cmd); err != nil {
 						return fmt.Errorf("ssh command failed on %s: %w", o.stepName(i), err)
+					}
+					run = true
+				case s.shellRunner != nil && s.shellCommand != nil:
+					cmd, err := parseShellCommand(s.shellCommand, o.expandBeforeRecord)
+					if err != nil {
+						return fmt.Errorf("invalid %s: %w", o.stepName(i), err)
+					}
+					if err := s.shellRunner.Run(ctx, cmd); err != nil {
+						return fmt.Errorf("shell command failed on %s: %w", o.stepName(i), err)
 					}
 					run = true
 				case s.execRunner != nil && s.execCommand != nil:

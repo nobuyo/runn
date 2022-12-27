@@ -67,6 +67,7 @@ func TestRunnable(t *testing.T) {
 		{filepath.Join(testutil.Testdata(), "book", "grpc.yml")},
 		{filepath.Join(testutil.Testdata(), "book", "db.yml")},
 		{filepath.Join(testutil.Testdata(), "book", "exec.yml")},
+		{filepath.Join(testutil.Testdata(), "book", "shell.yml")},
 	}
 	ctx := context.Background()
 	for _, tt := range tests {
@@ -80,6 +81,7 @@ func TestRunnable(t *testing.T) {
 				runn.HTTPRunner("req", hs.URL, hs.Client(), runn.MultipartBoundary(testutil.MultipartBoundary)),
 				runn.GrpcRunner("greq", gs.Conn()),
 				runn.DBRunner("db", db),
+				runn.ShellRunnerWithOptions("bash", runn.Shell("bash"), runn.KeepProcess(true)),
 				runn.Capture(Runbook(dir)),
 			}
 			o, err := runn.New(opts...)
@@ -96,6 +98,7 @@ func TestRunnable(t *testing.T) {
 					runn.HTTPRunner("req", hs.URL, hs.Client(), runn.MultipartBoundary(testutil.MultipartBoundary)),
 					runn.GrpcRunner("greq", gs.Conn()),
 					runn.DBRunner("db", db),
+					runn.ShellRunnerWithOptions("bash", runn.Shell("bash"), runn.KeepProcess(true)),
 				}
 				o, err := runn.New(opts...)
 				if err != nil {

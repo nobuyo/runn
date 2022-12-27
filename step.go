@@ -18,6 +18,8 @@ type step struct {
 	sshCommand    map[string]interface{}
 	execRunner    *execRunner
 	execCommand   map[string]interface{}
+	shellRunner   *shellRunner
+	shellCommand  map[string]interface{}
 	testRunner    *testRunner
 	testCond      string
 	dumpRunner    *dumpRunner
@@ -50,6 +52,8 @@ func (s *step) generateID() ID {
 		id.StepRunnerType = RunnerTypeSSH
 	case s.execRunner != nil && s.execCommand != nil:
 		id.StepRunnerType = RunnerTypeExec
+	case s.shellRunner != nil && s.shellCommand != nil:
+		id.StepRunnerType = RunnerTypeShell
 	case s.includeRunner != nil && s.includeConfig != nil:
 		id.StepRunnerType = RunnerTypeInclude
 	case s.dumpRunner != nil && s.dumpRequest != nil:

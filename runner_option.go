@@ -41,11 +41,18 @@ type sshRunnerConfig struct {
 	KeepSession  bool   `yaml:"keepSession,omitempty"`
 }
 
+type shellRunnerConfig struct {
+	Shell       string `yaml:"shell,omitempty"`
+	KeepProcess bool   `yaml:"keepProcess,omitempty"`
+}
+
 type httpRunnerOption func(*httpRunnerConfig) error
 
 type grpcRunnerOption func(*grpcRunnerConfig) error
 
 type sshRunnerOption func(*sshRunnerConfig) error
+
+type shellRunnerOption func(*shellRunnerConfig) error
 
 func OpenApi3(l string) httpRunnerOption {
 	return func(c *httpRunnerConfig) error {
@@ -192,6 +199,20 @@ func IdentityFile(p string) sshRunnerOption {
 func KeepSession(enable bool) sshRunnerOption {
 	return func(c *sshRunnerConfig) error {
 		c.KeepSession = enable
+		return nil
+	}
+}
+
+func Shell(s string) shellRunnerOption {
+	return func(c *shellRunnerConfig) error {
+		c.Shell = s
+		return nil
+	}
+}
+
+func KeepProcess(enable bool) shellRunnerOption {
+	return func(c *shellRunnerConfig) error {
+		c.KeepProcess = enable
 		return nil
 	}
 }

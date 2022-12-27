@@ -43,6 +43,11 @@ type Capturer interface {
 	CaptureExecStdout(stdout string)
 	CaptureExecStderr(stderr string)
 
+	CaptureShellCommand(command string)
+	CaptureShellStdin(stdin string)
+	CaptureShellStdout(stdout string)
+	CaptureShellStderr(stderr string)
+
 	SetCurrentIDs(ids IDs)
 	Errs() error
 }
@@ -219,6 +224,30 @@ func (cs capturers) captureExecStdout(stdout string) {
 func (cs capturers) captureExecStderr(stderr string) {
 	for _, c := range cs {
 		c.CaptureExecStderr(stderr)
+	}
+}
+
+func (cs capturers) captureShellCommand(command string) {
+	for _, c := range cs {
+		c.CaptureShellCommand(command)
+	}
+}
+
+func (cs capturers) captureShellStdin(stdin string) {
+	for _, c := range cs {
+		c.CaptureShellStdin(stdin)
+	}
+}
+
+func (cs capturers) captureShellStdout(stdout string) {
+	for _, c := range cs {
+		c.CaptureShellStdout(stdout)
+	}
+}
+
+func (cs capturers) captureShellStderr(stderr string) {
+	for _, c := range cs {
+		c.CaptureShellStderr(stderr)
 	}
 }
 

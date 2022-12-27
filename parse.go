@@ -268,6 +268,42 @@ func parseSSHCommand(v map[string]interface{}, expand func(interface{}) (interfa
 	return sc, nil
 }
 
+func parseShellCommand(v map[string]interface{}, expand func(interface{}) (interface{}, error)) (*shellCommand, error) {
+	var err error
+	part, err := yaml.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	v = trimDelimiter(v)
+	vv, err := expand(v)
+	if err != nil {
+		return nil, err
+	}
+	vvv, ok := vv.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid command: %s", string(part))
+	}
+	sc := &shellCommand{}
+	c, ok := vvv["command"]
+	if !ok {
+		return nil, fmt.Errorf("invalid command: %s", string(part))
+	}
+	sc.command, ok = c.(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid command: %s", string(part))
+	}
+	ss, ok := vvv["stdin"]
+	if !ok {
+		return sc, nil
+	}
+	stdin, ok := ss.(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid stdin: %s", string(part))
+	}
+	sc.stdin = stdin
+	return sc, nil
+}
+
 func parseServiceAndMethod(in string) (string, string, error) {
 	splitted := strings.Split(strings.TrimPrefix(in, "/"), "/")
 	if len(splitted) < 2 {
